@@ -25,45 +25,52 @@ A powerful Caido plugin that provides a sidebar interface for managing custom he
 npm install -g pnpm
 ```
 
-### Build the Plugin
+### Quick Installation
 
-1. Clone or download this repository:
+**The fastest way to build and install:**
 
 ```bash
-git clone <repository-url>
-cd caido-headers-sidebar-plugin
+# 1. Install dependencies
+pnpm install
+
+# 2. Build and package the plugin
+pnpm run release
+
+# 3. Install caido-headers-sidebar.zip in Caido
+# Go to Caido → Settings → Plugins → Install from file
 ```
 
-2. Install dependencies:
+For detailed installation instructions, troubleshooting, and platform-specific guides, see **[INSTALL.md](INSTALL.md)**.
 
+### Manual Build Steps
+
+If you prefer to build step-by-step:
+
+1. **Install dependencies:**
 ```bash
 pnpm install
 ```
 
-3. Build the plugin:
-
+2. **Build the plugin:**
 ```bash
 pnpm run build
 ```
 
-This will create the compiled plugin files in the `dist/` directory.
+3. **Package into zip:**
+```bash
+pnpm run package
+```
+
+This creates `caido-headers-sidebar.zip` with the correct structure for Caido.
 
 ### Install in Caido
 
-1. Open Caido and navigate to **Settings** > **Plugins**
-2. Click **Install Plugin** or **Add Plugin**
-3. Select the plugin directory (the folder containing `manifest.json`)
-4. The plugin should now appear in your sidebar
+1. Open Caido and navigate to **Settings** → **Plugins**
+2. Click **"Install from file"** or **"Add Plugin"**
+3. Select the `caido-headers-sidebar.zip` file
+4. The plugin should now appear in your sidebar as "Headers Manager"
 
-Alternatively, you can manually copy the plugin to Caido's plugin directory:
-
-```bash
-# macOS/Linux
-cp -r . ~/.caido/plugins/caido-headers-sidebar/
-
-# Windows
-xcopy . %APPDATA%\caido\plugins\caido-headers-sidebar\ /E /I
-```
+**Important:** Caido requires a properly structured zip file. The packaging scripts ensure the correct structure automatically.
 
 ## Usage
 
