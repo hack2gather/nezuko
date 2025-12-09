@@ -1,0 +1,49 @@
+{
+  "description": "Example configuration for Headers & Cookies Manager",
+  "headers": [
+    {
+      "key": "Authorization",
+      "value": "Bearer YOUR_TOKEN_HERE"
+    },
+    {
+      "key": "X-API-Key",
+      "value": "your-api-key"
+    },
+    {
+      "key": "User-Agent",
+      "value": "CustomAgent/1.0"
+    },
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    },
+    {
+      "key": "X-Custom-Header",
+      "value": "custom-value"
+    }
+  ],
+  "cookies": [
+    {
+      "key": "sessionId",
+      "value": "abc123def456ghi789"
+    },
+    {
+      "key": "userId",
+      "value": "12345"
+    },
+    {
+      "key": "authToken",
+      "value": "xyz789uvw456rst123"
+    },
+    {
+      "key": "preferences",
+      "value": "theme=dark;lang=en"
+    }
+  ],
+  "notes": [
+    "This is an example configuration file",
+    "Copy the headers and cookies you need into the plugin UI",
+    "Do NOT commit sensitive tokens to version control",
+    "Replace placeholder values with your actual values"
+  ]
+}

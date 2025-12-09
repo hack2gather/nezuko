@@ -1,0 +1,81 @@
+/* Headers & Cookies Manager Plugin Styles */
+
+/* Ensure consistent styling across the plugin */
+.headers-manager-container {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  padding: 16px;
+  background-color: var(--caido-bg-primary, #ffffff);
+  color: var(--caido-text-primary, #000000);
+}
+
+/* Input fields */
+.headers-manager-container input[type="text"] {
+  background-color: var(--caido-bg-secondary, #f8f9fa);
+  color: var(--caido-text-primary, #000000);
+  border: 1px solid var(--caido-border, #dee2e6);
+}
+
+.headers-manager-container input[type="text"]:focus {
+  outline: 2px solid var(--caido-accent, #007bff);
+  outline-offset: 2px;
+}
+
+/* Buttons */
+.headers-manager-container button {
+  transition: all 0.2s ease-in-out;
+}
+
+.headers-manager-container button:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.headers-manager-container button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.headers-manager-container button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Scrollbar styling */
+.headers-manager-container ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.headers-manager-container ::-webkit-scrollbar-track {
+  background: var(--caido-bg-secondary, #f1f1f1);
+}
+
+.headers-manager-container ::-webkit-scrollbar-thumb {
+  background: var(--caido-border, #888);
+  border-radius: 4px;
+}
+
+.headers-manager-container ::-webkit-scrollbar-thumb:hover {
+  background: var(--caido-text-secondary, #555);
+}
+
+/* Checkbox styling */
+.headers-manager-container input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Status message animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.headers-manager-container .status-message {
+  animation: slideIn 0.3s ease-out;
+}

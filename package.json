@@ -1,0 +1,33 @@
+{
+  "name": "caido-headers-sidebar-plugin",
+  "version": "1.0.0",
+  "description": "Caido plugin for managing custom headers and cookies with sidebar UI and Repeater integration",
+  "main": "dist/backend.js",
+  "scripts": {
+    "build": "pnpm run build:frontend && pnpm run build:backend",
+    "build:frontend": "esbuild src/frontend/index.tsx --bundle --outfile=dist/frontend.js --format=esm --jsx=automatic --jsx-dev=false",
+    "build:backend": "esbuild src/backend/index.ts --bundle --outfile=dist/backend.js --format=cjs --platform=node --external:caido:*",
+    "watch": "pnpm run build --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "caido",
+    "plugin",
+    "headers",
+    "cookies",
+    "repeater",
+    "sidebar"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@caido/sdk-backend": "^0.2.0",
+    "@caido/sdk-frontend": "^0.11.0",
+    "@types/node": "^20.10.0",
+    "esbuild": "^0.19.8",
+    "typescript": "^5.3.2"
+  },
+  "pnpm": {
+    "overrides": {}
+  }
+}
