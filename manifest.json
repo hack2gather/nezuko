@@ -7,14 +7,23 @@
     "name": "Caido Plugin Developer",
     "email": "dev@example.com"
   },
-  "caido": {
-    "min_version": "0.30.0"
-  },
-  "frontend": {
-    "entrypoint": "frontend.js",
-    "style": "styles.css"
-  },
-  "backend": {
-    "entrypoint": "backend.js"
-  }
+  "plugins": [
+    {
+      "kind": "frontend",
+      "id": "headers-sidebar-frontend",
+      "name": "Headers Sidebar Frontend",
+      "entrypoint": "frontend.js",
+      "style": "styles.css",
+      "backend": {
+        "id": "headers-sidebar-backend"
+      }
+    },
+    {
+      "kind": "backend",
+      "id": "headers-sidebar-backend",
+      "name": "Headers Sidebar Backend",
+      "runtime": "javascript",
+      "entrypoint": "backend.js"
+    }
+  ]
 }
