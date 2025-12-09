@@ -5,8 +5,8 @@
   "main": "dist/backend.js",
   "scripts": {
     "build": "pnpm run build:frontend && pnpm run build:backend",
-    "build:frontend": "esbuild src/frontend/index.tsx --bundle --outfile=dist/frontend.js --format=esm --jsx=automatic --jsx-dev=false",
-    "build:backend": "esbuild src/backend/index.ts --bundle --outfile=dist/backend.js --format=cjs --platform=node --external:caido:*",
+    "build:frontend": "esbuild src/frontend/index.tsx --bundle --outfile=dist/frontend.js --format=esm --jsx=automatic --jsx-dev=false --external:react --external:react-dom --external:react/jsx-runtime --external:@caido/sdk-frontend",
+    "build:backend": "esbuild src/backend/index.ts --bundle --outfile=dist/backend.js --format=cjs --platform=node --external:caido:* --external:@caido/sdk-backend",
     "watch": "pnpm run build --watch",
     "clean": "rm -rf dist"
   },
