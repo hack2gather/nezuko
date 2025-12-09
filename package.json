@@ -10,6 +10,7 @@
     "package": "node scripts/package.js",
     "package:win": "scripts\\package.bat",
     "package:unix": "bash scripts/package.sh",
+    "verify": "scripts\\verify-zip.bat",
     "release": "pnpm run build && pnpm run package",
     "watch": "pnpm run build --watch",
     "clean": "rm -rf dist package caido-headers-sidebar.zip"
