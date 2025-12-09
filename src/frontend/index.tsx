@@ -1,5 +1,6 @@
 import type { Caido } from "@caido/sdk-frontend";
 import { useState, useEffect } from "react";
+import { createRoot } from "react-dom/client";
 
 interface HeaderEntry {
   key: string;
@@ -137,7 +138,7 @@ const HeadersSidebar = ({ caido }: { caido: Caido }) => {
   };
 
   return (
-    <div style={{ padding: "16px", fontFamily: "system-ui, -apple-system, sans-serif", maxWidth: "100%" }}>
+    <div style={{ padding: "16px", fontFamily: "system-ui, -apple-system, sans-serif", maxWidth: "100%", height: "100%" }}>
       <h2 style={{ marginTop: 0, marginBottom: "16px", fontSize: "18px" }}>Headers & Cookies Manager</h2>
 
       {/* Status Message */}
@@ -417,9 +418,25 @@ const HeadersSidebar = ({ caido }: { caido: Caido }) => {
 };
 
 export const init = (caido: Caido) => {
-  // Register the sidebar
-  caido.sidebar.register("Headers Manager", {
-    render: () => <HeadersSidebar caido={caido} />
+  // Create a container element for our React app
+  const container = document.createElement("div");
+  container.id = "headers-manager-root";
+  container.style.width = "100%";
+  container.style.height = "100%";
+  container.style.overflow = "auto";
+
+  // Mount the React component
+  const root = createRoot(container);
+  root.render(<HeadersSidebar caido={caido} />);
+
+  // Create a page using Caido SDK
+  const page = caido.navigation.addPage("/headers-manager", {
+    body: container
+  });
+
+  // Register sidebar item
+  caido.sidebar.registerItem("Headers Manager", "/headers-manager", {
+    icon: "fas fa-cookie"
   });
 
   console.log("Headers & Cookies Manager plugin initialized");
