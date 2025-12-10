@@ -692,38 +692,52 @@ export const init = (caido: Caido) => {
     name: "Send to Headers Manager",
     run: async (context) => {
       try {
+        console.log("Context menu command triggered", context);
+
         // Get selected request IDs from context
         const requestIds = context.requests?.map(r => r.getId()) || [];
+        console.log("Request IDs:", requestIds);
 
-        if (requestIds.length > 0) {
-          // Add requests to the backend queue
-          await caido.backend.addRequestsToQueue(requestIds);
-
-          // Show toast notification
-          caido.window.showToast(`Added ${requestIds.length} request(s) to Headers Manager`, {
-            variant: "success",
+        if (requestIds.length === 0) {
+          caido.window.showToast("No requests selected", {
+            variant: "warning",
             duration: 3000
           });
-
-          // Navigate to the plugin page
-          caido.navigation.goTo("/headers-manager");
+          return;
         }
+
+        // Add requests to the backend queue
+        console.log("Calling backend.addRequestsToQueue with:", requestIds);
+        const result = await caido.backend.addRequestsToQueue(requestIds);
+        console.log("Backend returned:", result);
+
+        // Show toast notification
+        caido.window.showToast(`Added ${requestIds.length} request(s) to Headers Manager`, {
+          variant: "success",
+          duration: 3000
+        });
+
+        // Navigate to the plugin page
+        caido.navigation.goTo("/headers-manager");
       } catch (error) {
         console.error("Error sending requests to Headers Manager:", error);
-        caido.window.showToast("Error adding requests to Headers Manager", {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        caido.window.showToast(`Error: ${errorMsg}`, {
           variant: "error",
-          duration: 3000
+          duration: 5000
         });
       }
     }
   });
 
   // Register the menu item in HTTP History context menu
+  console.log("Registering context menu item for RequestRow");
   caido.menu.registerItem({
     type: "RequestRow",
     commandId: "headers-manager:send-to-plugin",
     leadingIcon: "fas fa-cookie"
   });
+  console.log("Context menu item registered successfully");
 
   console.log("Headers & Cookies Manager plugin initialized");
 };

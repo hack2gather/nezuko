@@ -56,12 +56,25 @@ export class HeadersManagerBackend {
    * Add requests to the queue from HTTP History context menu
    */
   async addRequestsToQueue(requestIds: string[]): Promise<RequestInfo[]> {
-    this.sdk.console.log(`Adding ${requestIds.length} requests to queue`);
+    this.sdk.console.log(`[addRequestsToQueue] Received ${requestIds.length} request IDs`);
+    this.sdk.console.log(`[addRequestsToQueue] Request IDs:`, JSON.stringify(requestIds));
+
+    if (!requestIds || requestIds.length === 0) {
+      this.sdk.console.warn(`[addRequestsToQueue] No request IDs provided`);
+      return this.queuedRequests;
+    }
 
     for (const requestId of requestIds) {
       try {
+        this.sdk.console.log(`[addRequestsToQueue] Processing request ID: ${requestId}`);
+
         const request = await this.sdk.requests.get(requestId);
-        if (!request) continue;
+        if (!request) {
+          this.sdk.console.warn(`[addRequestsToQueue] Request ${requestId} not found`);
+          continue;
+        }
+
+        this.sdk.console.log(`[addRequestsToQueue] Got request object for ${requestId}`);
 
         const spec = request.toSpec();
         const protocol = spec.getTls() ? "https" : "http";
@@ -76,7 +89,7 @@ export class HeadersManagerBackend {
             statusCode = response.getCode();
           }
         } catch (e) {
-          // Response might not be available
+          this.sdk.console.log(`[addRequestsToQueue] No response available for ${requestId}`);
         }
 
         const requestInfo: RequestInfo = {
@@ -91,13 +104,17 @@ export class HeadersManagerBackend {
         // Add to queue if not already there
         if (!this.queuedRequests.some(r => r.id === requestId)) {
           this.queuedRequests.push(requestInfo);
+          this.sdk.console.log(`[addRequestsToQueue] Added ${requestId} to queue`);
+        } else {
+          this.sdk.console.log(`[addRequestsToQueue] Request ${requestId} already in queue`);
         }
       } catch (error) {
-        this.sdk.console.error(`Error processing request ${requestId}:`, error);
+        this.sdk.console.error(`[addRequestsToQueue] Error processing request ${requestId}:`, error);
+        // Continue processing other requests even if one fails
       }
     }
 
-    this.sdk.console.log(`Queue now has ${this.queuedRequests.length} requests`);
+    this.sdk.console.log(`[addRequestsToQueue] Queue now has ${this.queuedRequests.length} requests`);
     return this.queuedRequests;
   }
 
