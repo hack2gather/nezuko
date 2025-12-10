@@ -44,8 +44,6 @@ const HeadersSidebar = ({ caido }: { caido: Caido }) => {
   const [cookies, setCookies] = useState<CookieEntry[]>([{ key: "", value: "" }]);
   const [requests, setRequests] = useState<RequestInfo[]>([]);
   const [selectedRequestIds, setSelectedRequestIds] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSending, setIsSending] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [results, setResults] = useState<RequestResult[]>([]);
@@ -53,7 +51,14 @@ const HeadersSidebar = ({ caido }: { caido: Caido }) => {
 
   useEffect(() => {
     loadSavedData();
-    loadRequests();
+    loadQueuedRequests();
+
+    // Poll for new requests every 2 seconds
+    const interval = setInterval(() => {
+      loadQueuedRequests();
+    }, 2000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const loadSavedData = async () => {
@@ -73,24 +78,50 @@ const HeadersSidebar = ({ caido }: { caido: Caido }) => {
     }
   };
 
-  const loadRequests = async (query?: string) => {
-    setIsLoading(true);
+  const loadQueuedRequests = async () => {
     try {
-      const httpHistory = await caido.backend.getHttpHistory(query);
-      setRequests(httpHistory || []);
-      setStatusMessage(`Loaded ${httpHistory?.length || 0} requests`);
-      setTimeout(() => setStatusMessage(""), 2000);
+      const queuedRequests = await caido.backend.getQueuedRequests();
+      if (queuedRequests && queuedRequests.length !== requests.length) {
+        setRequests(queuedRequests || []);
+      }
     } catch (error) {
-      console.error("Error loading requests:", error);
-      setStatusMessage("✗ Error loading requests");
-      setTimeout(() => setStatusMessage(""), 3000);
-    } finally {
-      setIsLoading(false);
+      console.error("Error loading queued requests:", error);
     }
   };
 
-  const handleSearch = () => {
-    loadRequests(searchQuery);
+  const handleRefresh = async () => {
+    await loadQueuedRequests();
+    setStatusMessage(`Refreshed - ${requests.length} requests in queue`);
+    setTimeout(() => setStatusMessage(""), 2000);
+  };
+
+  const handleClearQueue = async () => {
+    try {
+      await caido.backend.clearQueue();
+      setRequests([]);
+      setSelectedRequestIds(new Set());
+      setResults([]);
+      setStatusMessage("✓ Queue cleared");
+      setTimeout(() => setStatusMessage(""), 2000);
+    } catch (error) {
+      console.error("Error clearing queue:", error);
+      setStatusMessage("✗ Error clearing queue");
+      setTimeout(() => setStatusMessage(""), 3000);
+    }
+  };
+
+  const handleRemoveRequest = async (requestId: string) => {
+    try {
+      const updatedRequests = await caido.backend.removeFromQueue(requestId);
+      setRequests(updatedRequests || []);
+
+      // Remove from selection if selected
+      const newSelected = new Set(selectedRequestIds);
+      newSelected.delete(requestId);
+      setSelectedRequestIds(newSelected);
+    } catch (error) {
+      console.error("Error removing request:", error);
+    }
   };
 
   const handleSave = async () => {
@@ -211,6 +242,19 @@ const HeadersSidebar = ({ caido }: { caido: Caido }) => {
           {statusMessage}
         </div>
       )}
+
+      {/* Instructions */}
+      <div style={{
+        padding: "12px",
+        marginBottom: "16px",
+        backgroundColor: "#e7f3ff",
+        borderRadius: "6px",
+        border: "1px solid #b3d9ff"
+      }}>
+        <p style={{ margin: 0, fontSize: "14px", color: "#004085" }}>
+          <strong>💡 How to use:</strong> Right-click requests in HTTP History and select "Send to Headers Manager" to add them here.
+        </p>
+      </div>
 
       {/* Headers Configuration */}
       <div style={{ marginBottom: "24px", padding: "16px", backgroundColor: "#f8f9fa", borderRadius: "6px" }}>
@@ -355,47 +399,34 @@ const HeadersSidebar = ({ caido }: { caido: Caido }) => {
 
       <hr style={{ border: "none", borderTop: "2px solid #dee2e6", margin: "24px 0" }} />
 
-      {/* HTTP History Requests */}
+      {/* Queued Requests */}
       <div style={{ marginBottom: "24px" }}>
-        <h3 style={{ fontSize: "18px", marginBottom: "12px", fontWeight: "bold" }}>📋 Select Requests from HTTP History</h3>
-
-        {/* Search Bar */}
-        <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
-          <input
-            type="text"
-            placeholder="Search (e.g., host:example.com, path:/api, method:POST)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-            style={{
-              flex: 1,
-              padding: "10px",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              fontSize: "14px"
-            }}
-          />
-          <button onClick={handleSearch} style={{
-            padding: "10px 20px",
+        <div style={{ display: "flex", alignItems: "center", marginBottom: "12px" }}>
+          <h3 style={{ fontSize: "18px", fontWeight: "bold", margin: 0, flex: 1 }}>
+            📋 Queued Requests ({requests.length})
+          </h3>
+          <button onClick={handleRefresh} style={{
+            padding: "6px 12px",
             backgroundColor: "#17a2b8",
             color: "white",
             border: "none",
             borderRadius: "4px",
             cursor: "pointer",
-            fontSize: "14px"
+            fontSize: "13px",
+            marginRight: "8px"
           }}>
-            🔍 Search
+            🔄 Refresh
           </button>
-          <button onClick={() => { setSearchQuery(""); loadRequests(); }} style={{
-            padding: "10px 20px",
-            backgroundColor: "#6c757d",
+          <button onClick={handleClearQueue} style={{
+            padding: "6px 12px",
+            backgroundColor: "#dc3545",
             color: "white",
             border: "none",
             borderRadius: "4px",
             cursor: "pointer",
-            fontSize: "14px"
+            fontSize: "13px"
           }}>
-            Clear
+            🗑️ Clear All
           </button>
         </div>
 
@@ -436,43 +467,32 @@ const HeadersSidebar = ({ caido }: { caido: Caido }) => {
           overflow: "auto",
           backgroundColor: "white"
         }}>
-          {isLoading ? (
-            <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-              Loading requests...
-            </div>
-          ) : requests.length === 0 ? (
-            <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-              No requests found. Try adjusting your search or capture some requests first.
+          {requests.length === 0 ? (
+            <div style={{ padding: "40px 20px", textAlign: "center", color: "#666" }}>
+              <div style={{ fontSize: "48px", marginBottom: "12px" }}>📭</div>
+              <p style={{ margin: 0, fontSize: "16px", fontWeight: "500" }}>No requests in queue</p>
+              <p style={{ margin: "8px 0 0 0", fontSize: "14px" }}>
+                Right-click requests in HTTP History and select<br />"Send to Headers Manager"
+              </p>
             </div>
           ) : (
             requests.map((req) => (
-              <label
+              <div
                 key={req.id}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   padding: "10px 12px",
-                  cursor: "pointer",
                   borderBottom: "1px solid #f0f0f0",
                   backgroundColor: selectedRequestIds.has(req.id) ? "#e7f3ff" : "transparent",
                   transition: "background-color 0.2s"
-                }}
-                onMouseEnter={(e) => {
-                  if (!selectedRequestIds.has(req.id)) {
-                    e.currentTarget.style.backgroundColor = "#f8f9fa";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!selectedRequestIds.has(req.id)) {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }
                 }}
               >
                 <input
                   type="checkbox"
                   checked={selectedRequestIds.has(req.id)}
                   onChange={() => toggleRequest(req.id)}
-                  style={{ marginRight: "12px", width: "16px", height: "16px" }}
+                  style={{ marginRight: "12px", width: "16px", height: "16px", cursor: "pointer" }}
                 />
                 <span style={{
                   fontWeight: "bold",
@@ -502,7 +522,22 @@ const HeadersSidebar = ({ caido }: { caido: Caido }) => {
                 }}>
                   {req.statusCode || "---"}
                 </span>
-              </label>
+                <button
+                  onClick={() => handleRemoveRequest(req.id)}
+                  style={{
+                    marginLeft: "12px",
+                    padding: "4px 8px",
+                    backgroundColor: "#dc3545",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "3px",
+                    cursor: "pointer",
+                    fontSize: "11px"
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
             ))
           )}
         </div>
@@ -650,6 +685,44 @@ export const init = (caido: Caido) => {
 
   caido.sidebar.registerItem("Headers Manager", "/headers-manager", {
     icon: "fas fa-cookie"
+  });
+
+  // Register context menu command for HTTP History
+  caido.commands.register("headers-manager:send-to-plugin", {
+    name: "Send to Headers Manager",
+    run: async (context) => {
+      try {
+        // Get selected request IDs from context
+        const requestIds = context.requests?.map(r => r.getId()) || [];
+
+        if (requestIds.length > 0) {
+          // Add requests to the backend queue
+          await caido.backend.addRequestsToQueue(requestIds);
+
+          // Show toast notification
+          caido.window.showToast(`Added ${requestIds.length} request(s) to Headers Manager`, {
+            variant: "success",
+            duration: 3000
+          });
+
+          // Navigate to the plugin page
+          caido.navigation.goTo("/headers-manager");
+        }
+      } catch (error) {
+        console.error("Error sending requests to Headers Manager:", error);
+        caido.window.showToast("Error adding requests to Headers Manager", {
+          variant: "error",
+          duration: 3000
+        });
+      }
+    }
+  });
+
+  // Register the menu item in HTTP History context menu
+  caido.menu.registerItem({
+    type: "Request",
+    commandId: "headers-manager:send-to-plugin",
+    leadingIcon: "fas fa-cookie"
   });
 
   console.log("Headers & Cookies Manager plugin initialized");

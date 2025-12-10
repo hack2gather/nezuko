@@ -46,78 +46,83 @@ interface SendSelectedResult {
 
 export class HeadersManagerBackend {
   private sdk: SDK;
+  private queuedRequests: RequestInfo[] = [];
 
   constructor(sdk: SDK) {
     this.sdk = sdk;
   }
 
   /**
-   * Get HTTP history requests
+   * Add requests to the queue from HTTP History context menu
    */
-  async getHttpHistory(searchQuery?: string): Promise<RequestInfo[]> {
-    try {
-      this.sdk.console.log("Fetching HTTP history...");
+  async addRequestsToQueue(requestIds: string[]): Promise<RequestInfo[]> {
+    this.sdk.console.log(`Adding ${requestIds.length} requests to queue`);
 
-      // Get requests from HTTP history
-      // Using the SDK's requests/findings API
-      const requests: RequestInfo[] = [];
-
-      // Query the database for HTTP requests
-      // Note: This uses Caido's internal GraphQL API
-      const query = `
-        query GetRequests($limit: Int!, $filter: HTTPQL) {
-          httpHistory {
-            requests(limit: $limit, order: {by: ID, ordering: DESC}, filter: $filter) {
-              nodes {
-                id
-                method
-                host
-                path
-                port
-                tls
-                response {
-                  statusCode
-                }
-              }
-            }
-          }
-        }
-      `;
-
-      const variables = {
-        limit: 100,
-        filter: searchQuery || null
-      };
-
+    for (const requestId of requestIds) {
       try {
-        const result = await this.sdk.api.graphql(query, variables);
+        const request = await this.sdk.requests.get(requestId);
+        if (!request) continue;
 
-        if (result.data?.httpHistory?.requests?.nodes) {
-          for (const node of result.data.httpHistory.requests.nodes) {
-            const protocol = node.tls ? "https" : "http";
-            const port = node.port === (node.tls ? 443 : 80) ? "" : `:${node.port}`;
-            const url = `${protocol}://${node.host}${port}${node.path}`;
+        const spec = request.toSpec();
+        const protocol = spec.getTls() ? "https" : "http";
+        const port = spec.getPort() === (spec.getTls() ? 443 : 80) ? "" : `:${spec.getPort()}`;
+        const url = `${protocol}://${spec.getHost()}${port}${spec.getPath()}`;
 
-            requests.push({
-              id: node.id,
-              method: node.method,
-              url: url,
-              host: node.host,
-              path: node.path,
-              statusCode: node.response?.statusCode || 0
-            });
+        // Get status code if available
+        let statusCode = 0;
+        try {
+          const response = request.getResponse();
+          if (response) {
+            statusCode = response.getCode();
           }
+        } catch (e) {
+          // Response might not be available
+        }
+
+        const requestInfo: RequestInfo = {
+          id: requestId,
+          method: spec.getMethod(),
+          url: url,
+          host: spec.getHost(),
+          path: spec.getPath(),
+          statusCode: statusCode
+        };
+
+        // Add to queue if not already there
+        if (!this.queuedRequests.some(r => r.id === requestId)) {
+          this.queuedRequests.push(requestInfo);
         }
       } catch (error) {
-        this.sdk.console.error("GraphQL query error:", error);
+        this.sdk.console.error(`Error processing request ${requestId}:`, error);
       }
-
-      this.sdk.console.log(`Found ${requests.length} requests`);
-      return requests;
-    } catch (error) {
-      this.sdk.console.error("Error getting HTTP history:", error);
-      return [];
     }
+
+    this.sdk.console.log(`Queue now has ${this.queuedRequests.length} requests`);
+    return this.queuedRequests;
+  }
+
+  /**
+   * Get queued requests
+   */
+  async getQueuedRequests(): Promise<RequestInfo[]> {
+    return this.queuedRequests;
+  }
+
+  /**
+   * Clear queued requests
+   */
+  async clearQueue(): Promise<void> {
+    this.queuedRequests = [];
+    this.sdk.console.log("Queue cleared");
+  }
+
+  /**
+   * Remove specific request from queue
+   */
+  async removeFromQueue(requestId: string): Promise<RequestInfo[]> {
+    this.queuedRequests = this.queuedRequests.filter(r => r.id !== requestId);
+    this.sdk.console.log(`Removed request ${requestId} from queue`);
+    return this.queuedRequests;
   }
 
   /**
@@ -247,8 +252,20 @@ export function init(sdk: SDK) {
   const backend = new HeadersManagerBackend(sdk);
 
   // Register RPC endpoints
-  sdk.api.register("getHttpHistory", async (searchQuery?: string) => {
-    return await backend.getHttpHistory(searchQuery);
+  sdk.api.register("addRequestsToQueue", async (requestIds: string[]) => {
+    return await backend.addRequestsToQueue(requestIds);
+  });
+
+  sdk.api.register("getQueuedRequests", async () => {
+    return await backend.getQueuedRequests();
+  });
+
+  sdk.api.register("clearQueue", async () => {
+    return await backend.clearQueue();
+  });
+
+  sdk.api.register("removeFromQueue", async (requestId: string) => {
+    return await backend.removeFromQueue(requestId);
   });
 
   sdk.api.register("sendSelectedRequests", async (params: SendSelectedParams) => {
