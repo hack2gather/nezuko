@@ -720,7 +720,7 @@ export const init = (caido: Caido) => {
 
   // Register the menu item in HTTP History context menu
   caido.menu.registerItem({
-    type: "Request",
+    type: "RequestRow",
     commandId: "headers-manager:send-to-plugin",
     leadingIcon: "fas fa-cookie"
   });
