@@ -694,12 +694,14 @@ export const init = (caido: Caido) => {
       try {
         console.log("Context menu command triggered", context);
 
-        // Get selected request IDs from context
-        const requestIds = context.requests?.map(r => r.getId()) || [];
-        console.log("Request IDs:", requestIds);
+        // Get request ID from context (RequestRow provides singular request, not array)
+        const requestId = context.request?.id;
+        const requestIds = requestId ? [requestId] : [];
+        console.log("Request ID:", requestId);
+        console.log("Request IDs array:", requestIds);
 
         if (requestIds.length === 0) {
-          caido.window.showToast("No requests selected", {
+          caido.window.showToast("No request selected", {
             variant: "warning",
             duration: 3000
           });
